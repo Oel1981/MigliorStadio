@@ -15,33 +15,52 @@ if (!fs.existsSync(DATA_FILE)) {
 }
 
 app.get('/voti', (req, res) => {
-  const data = JSON.parse(fs.readFileSync(DATA_FILE));
-  res.json(data);
+  try {
+    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    res.json({ voti: data.voti || [] });
+  } catch(e) {
+    res.json({ voti: [] });
+  }
 });
 
 app.post('/voti', (req, res) => {
-  const data = JSON.parse(fs.readFileSync(DATA_FILE));
-  data.voti.push(req.body);
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data));
-  res.json({ ok: true });
+  try {
+    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    data.voti.push(req.body);
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data));
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/voti/:id', (req, res) => {
   if (req.headers['x-pin'] !== PIN)
     return res.status(401).json({ error: 'PIN errato' });
-  const data = JSON.parse(fs.readFileSync(DATA_FILE));
-  data.voti = data.voti.filter(v => String(v.id) !== String(req.params.id));
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data));
-  res.json({ ok: true });
+  try {
+    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    data.voti = data.voti.filter(v => String(v.id) !== String(req.params.id));
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data));
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/voti', (req, res) => {
   if (req.headers['x-pin'] !== PIN)
     return res.status(401).json({ error: 'PIN errato' });
-  fs.writeFileSync(DATA_FILE, JSON.stringify({ voti: [] }));
-  res.json({ ok: true });
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ voti: [] }));
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
+app.get('/ping', (req, res) => res.json({ ok: true }));
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Server su porta ' + PORT));
-```
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('Server avviato su porta ' + PORT);
+});
